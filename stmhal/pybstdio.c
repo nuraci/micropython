@@ -58,9 +58,11 @@ void stdout_tx_strn(const char *str, mp_uint_t len) {
 #if 0 && defined(USE_HOST_MODE) && MICROPY_HW_HAS_LCD
     lcd_print_strn(str, len);
 #endif
+#if MICROPY_ENABLE_USB
     if (usb_vcp_is_enabled()) {
         usb_vcp_send_strn(str, len);
     }
+#endif
 }
 
 void stdout_tx_strn_cooked(const char *str, mp_uint_t len) {
@@ -68,9 +70,11 @@ void stdout_tx_strn_cooked(const char *str, mp_uint_t len) {
     if (pyb_stdio_uart != PYB_UART_NONE) {
         uart_tx_strn_cooked(pyb_stdio_uart, str, len);
     }
+#if MICROPY_ENABLE_USB
     if (usb_vcp_is_enabled()) {
         usb_vcp_send_strn_cooked(str, len);
     }
+#endif
 }
 
 int stdin_rx_chr(void) {
@@ -85,10 +89,13 @@ int stdin_rx_chr(void) {
 #endif
 #endif
 
+#if MICROPY_ENABLE_USB
         byte c;
         if (usb_vcp_recv_byte(&c) != 0) {
             return c;
-        } else if (pyb_stdio_uart != PYB_UART_NONE && uart_rx_any(pyb_stdio_uart)) {
+        } else 
+#endif
+               if (pyb_stdio_uart != PYB_UART_NONE && uart_rx_any(pyb_stdio_uart)) {
             return uart_rx_char(pyb_stdio_uart);
         }
         __WFI();

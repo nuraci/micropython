@@ -69,7 +69,9 @@
 /// \function bootloader()
 /// Activate the bootloader without BOOT* pins.
 STATIC NORETURN mp_obj_t pyb_bootloader(void) {
+#if MICROPY_ENABLE_USB
     pyb_usb_dev_stop();
+#endif
     storage_flush();
 
     HAL_RCC_DeInit();
@@ -446,7 +448,11 @@ MP_DEFINE_CONST_FUN_OBJ_0(pyb_standby_obj, pyb_standby);
 /// \function have_cdc()
 /// Return True if USB is connected as a serial device, False otherwise.
 STATIC mp_obj_t pyb_have_cdc(void ) {
+#if MICROPY_ENABLE_USB
     return MP_BOOL(usb_vcp_is_connected());
+#else
+	return 0;
+#endif
 }
 STATIC MP_DEFINE_CONST_FUN_OBJ_0(pyb_have_cdc_obj, pyb_have_cdc);
 
@@ -472,6 +478,7 @@ STATIC mp_obj_t pyb_repl_uart(mp_uint_t n_args, const mp_obj_t *args) {
 }
 STATIC MP_DEFINE_CONST_FUN_OBJ_VAR_BETWEEN(pyb_repl_uart_obj, 0, 1, pyb_repl_uart);
 
+#if MICROPY_ENABLE_USB
 /// \function hid((buttons, x, y, z))
 /// Takes a 4-tuple (or list) and sends it to the USB host (the PC) to
 /// signal a HID mouse-motion event.
@@ -487,9 +494,13 @@ STATIC mp_obj_t pyb_hid_send_report(mp_obj_t arg) {
     return mp_const_none;
 }
 STATIC MP_DEFINE_CONST_FUN_OBJ_1(pyb_hid_send_report_obj, pyb_hid_send_report);
+#endif
 
 MP_DECLARE_CONST_FUN_OBJ(pyb_main_obj); // defined in main.c
+
+#if MICROPY_ENABLE_USB
 MP_DECLARE_CONST_FUN_OBJ(pyb_usb_mode_obj); // defined in main.c
+#endif
 
 STATIC const mp_map_elem_t pyb_module_globals_table[] = {
     { MP_OBJ_NEW_QSTR(MP_QSTR___name__), MP_OBJ_NEW_QSTR(MP_QSTR_pyb) },
@@ -508,12 +519,16 @@ STATIC const mp_map_elem_t pyb_module_globals_table[] = {
     { MP_OBJ_NEW_QSTR(MP_QSTR_stop), (mp_obj_t)&pyb_stop_obj },
     { MP_OBJ_NEW_QSTR(MP_QSTR_standby), (mp_obj_t)&pyb_standby_obj },
     { MP_OBJ_NEW_QSTR(MP_QSTR_main), (mp_obj_t)&pyb_main_obj },
+#if MICROPY_ENABLE_USB
     { MP_OBJ_NEW_QSTR(MP_QSTR_usb_mode), (mp_obj_t)&pyb_usb_mode_obj },
+#endif
 
     { MP_OBJ_NEW_QSTR(MP_QSTR_have_cdc), (mp_obj_t)&pyb_have_cdc_obj },
     { MP_OBJ_NEW_QSTR(MP_QSTR_repl_uart), (mp_obj_t)&pyb_repl_uart_obj },
+#if MICROPY_ENABLE_USB
     { MP_OBJ_NEW_QSTR(MP_QSTR_hid), (mp_obj_t)&pyb_hid_send_report_obj },
     { MP_OBJ_NEW_QSTR(MP_QSTR_USB_VCP), (mp_obj_t)&pyb_usb_vcp_type },
+#endif
 
     { MP_OBJ_NEW_QSTR(MP_QSTR_millis), (mp_obj_t)&pyb_millis_obj },
     { MP_OBJ_NEW_QSTR(MP_QSTR_elapsed_millis), (mp_obj_t)&pyb_elapsed_millis_obj },
