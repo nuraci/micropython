@@ -98,6 +98,27 @@ AUR.  If the above does not work it may be because you don't have the
 correct permissions.  Try then:
 
     $ sudo dfu-util -a 0 -d 0483:df11 -D build-PYBV10/firmware.dfu
+	
+The STM-NUCLEO F4x1 version
+---------------
+
+The "nucleo" port requires an ARM compiler, arm-none-eabi-gcc, and associated
+bin-utils.  For those using Arch Linux, you need arm-none-eabi-binutils and
+arm-none-eabi-gcc packages from the AUR.  Otherwise, try here:
+https://launchpad.net/gcc-arm-embedded
+
+To build:
+
+    $ cd nucleo
+    $ make
+
+You then need to connect your board through USB, this will mount a file system labeled "NUCLEO" on our PC.
+
+Then to flash the code via USB (mbed Enabled) to your device:
+
+    $ make deploy
+
+or manually copy the firmware.bin file on the "NUCLEO" file system, it's all :)
 
 Building the documentation locally
 ----------------------------------
