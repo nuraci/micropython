@@ -123,7 +123,11 @@ STATIC const mp_map_elem_t stm_module_globals_table[] = {
     { MP_OBJ_NEW_QSTR(MP_QSTR_mem16), (mp_obj_t)&stm_mem16_obj },
     { MP_OBJ_NEW_QSTR(MP_QSTR_mem32), (mp_obj_t)&stm_mem32_obj },
 
+#if !defined(STM32F401xE)
 #include "modstmconst.gen.c"
+#else
+#include "../nucleo/modstmconst.gen.c"
+#endif
 };
 
 STATIC const mp_obj_dict_t stm_module_globals = {
