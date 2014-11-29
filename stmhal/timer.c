@@ -143,7 +143,11 @@ typedef struct _pyb_timer_obj_t {
 
 TIM_HandleTypeDef TIM3_Handle;
 TIM_HandleTypeDef TIM5_Handle;
+#if !defined(STM32F401xE)
 TIM_HandleTypeDef TIM6_Handle;
+#else
+TIM_HandleTypeDef TIM9_Handle;
+#endif
 
 // Used to divide down TIM3 and periodically call the flash storage IRQ
 STATIC uint32_t tim3_counter = 0;
@@ -221,7 +225,7 @@ void timer_tim5_init(void) {
 
     HAL_TIM_PWM_Init(&TIM5_Handle);
 }
-
+#if !defined(STM32F401xE)
 // Init TIM6 with a counter-overflow at the given frequency (given in Hz)
 // TIM6 is used by the DAC and ADC for auto sampling at a given frequency
 // This function inits but does not start the timer
@@ -246,11 +250,40 @@ void timer_tim6_init(uint freq) {
     TIM6_Handle.Init.CounterMode = TIM_COUNTERMODE_UP; // unused for TIM6
     HAL_TIM_Base_Init(&TIM6_Handle);
 }
+#else
+// Init TIM9 with a counter-overflow at the given frequency (given in Hz)
+// TIM9 is used by ADC for auto sampling at a given frequency
+// This function inits but does not start the timer
+void timer_tim9_init(uint freq) {
+    // TIM9 clock enable
+    __TIM9_CLK_ENABLE();
+
+    // Timer runs at SystemCoreClock / 2
+    // Compute the prescaler value so TIM9 triggers at freq-Hz
+    uint32_t period = MAX(1, timer_get_source_freq(9) / freq);
+    uint32_t prescaler = 1;
+    while (period > 0xffff) {
+        period >>= 1;
+        prescaler <<= 1;
+    }
+
+    // Time base clock configuration
+    TIM9_Handle.Instance = TIM9;
+    TIM9_Handle.Init.Period = period - 1;
+    TIM9_Handle.Init.Prescaler = prescaler - 1;
+    TIM9_Handle.Init.ClockDivision = TIM_CLOCKDIVISION_DIV1; // unused for TIM9
+    TIM9_Handle.Init.CounterMode = TIM_COUNTERMODE_UP; // unused for TIM9
+    HAL_TIM_Base_Init(&TIM9_Handle);
+}
+
+#endif
 
 // Interrupt dispatch
 void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim) {
     if (htim == &TIM3_Handle) {
+#if !defined(STM32F401xE)
         USBD_CDC_HAL_TIM_PeriodElapsedCallback();
+#endif
 
         // Periodically raise a flash IRQ for the flash storage controller
         if (tim3_counter++ >= 500 / USBD_CDC_POLLING_INTERVAL) {
@@ -585,15 +618,19 @@ STATIC mp_obj_t pyb_timer_init_helper(pyb_timer_obj_t *self, mp_uint_t n_args, c
         case 3: __TIM3_CLK_ENABLE(); break;
         case 4: __TIM4_CLK_ENABLE(); break;
         case 5: __TIM5_CLK_ENABLE(); break;
+#if !defined(STM32F401xE)
         case 6: __TIM6_CLK_ENABLE(); break;
         case 7: __TIM7_CLK_ENABLE(); break;
         case 8: __TIM8_CLK_ENABLE(); break;
+#endif
         case 9: __TIM9_CLK_ENABLE(); break;
         case 10: __TIM10_CLK_ENABLE(); break;
         case 11: __TIM11_CLK_ENABLE(); break;
+#if !defined(STM32F401xE)
         case 12: __TIM12_CLK_ENABLE(); break;
         case 13: __TIM13_CLK_ENABLE(); break;
         case 14: __TIM14_CLK_ENABLE(); break;
+#endif
     }
 
     // set IRQ priority (if not a special timer)
@@ -641,15 +678,19 @@ STATIC mp_obj_t pyb_timer_make_new(mp_obj_t type_in, mp_uint_t n_args, mp_uint_t
         case 3: nlr_raise(mp_obj_new_exception_msg(&mp_type_ValueError, "Timer 3 is for internal use only")); // TIM3 used for low-level stuff; go via regs if necessary
         case 4: tim->tim.Instance = TIM4; tim->irqn = TIM4_IRQn; break;
         case 5: tim->tim.Instance = TIM5; tim->irqn = TIM5_IRQn; tim->is_32bit = true; break;
+#if !defined(STM32F401xE)
         case 6: tim->tim.Instance = TIM6; tim->irqn = TIM6_DAC_IRQn; break;
         case 7: tim->tim.Instance = TIM7; tim->irqn = TIM7_IRQn; break;
         case 8: tim->tim.Instance = TIM8; tim->irqn = TIM8_UP_TIM13_IRQn; break;
+#endif
         case 9: tim->tim.Instance = TIM9; tim->irqn = TIM1_BRK_TIM9_IRQn; break;
         case 10: tim->tim.Instance = TIM10; tim->irqn = TIM1_UP_TIM10_IRQn; break;
         case 11: tim->tim.Instance = TIM11; tim->irqn = TIM1_TRG_COM_TIM11_IRQn; break;
+#if !defined(STM32F401xE)
         case 12: tim->tim.Instance = TIM12; tim->irqn = TIM8_BRK_TIM12_IRQn; break;
         case 13: tim->tim.Instance = TIM13; tim->irqn = TIM8_UP_TIM13_IRQn; break;
         case 14: tim->tim.Instance = TIM14; tim->irqn = TIM8_TRG_COM_TIM14_IRQn; break;
+#endif
         default: nlr_raise(mp_obj_new_exception_msg_varg(&mp_type_ValueError, "Timer %d does not exist", tim->tim_id));
     }
 

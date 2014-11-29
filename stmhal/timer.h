@@ -31,14 +31,22 @@
 
 extern TIM_HandleTypeDef TIM3_Handle;
 extern TIM_HandleTypeDef TIM5_Handle;
+#if !defined(STM32F401xE)
 extern TIM_HandleTypeDef TIM6_Handle;
+#else
+extern TIM_HandleTypeDef TIM9_Handle;
+#endif
 
 extern const mp_obj_type_t pyb_timer_type;
 
 void timer_init0(void);
 void timer_tim3_init(void);
 void timer_tim5_init(void);
+#if !defined(STM32F401xE)
 void timer_tim6_init(uint freq);
+#else
+void timer_tim9_init(uint freq);
+#endif
 
 void timer_deinit(void);
 

@@ -223,20 +223,34 @@ STATIC mp_obj_t adc_read_timed(mp_obj_t self_in, mp_obj_t buf_in, mp_obj_t freq_
     mp_get_buffer_raise(buf_in, &bufinfo, MP_BUFFER_WRITE);
     int typesize = mp_binary_get_size('@', bufinfo.typecode, NULL);
 
+#if !defined(STM32F401xE)
     // Init TIM6 at the required frequency (in Hz)
     timer_tim6_init(mp_obj_get_int(freq_in));
 
     // Start timer
     HAL_TIM_Base_Start(&TIM6_Handle);
+#else
+    // Init TIM9 at the required frequency (in Hz)
+    timer_tim9_init(mp_obj_get_int(freq_in));
+
+    // Start timer
+    HAL_TIM_Base_Start(&TIM9_Handle);
+#endif
 
     // This uses the timer in polling mode to do the sampling
     // We could use DMA, but then we can't convert the values correctly for the buffer
     adc_config_channel(self);
     for (uint index = 0; index < bufinfo.len; index++) {
         // Wait for the timer to trigger
+#if !defined(STM32F401xE)
         while (__HAL_TIM_GET_FLAG(&TIM6_Handle, TIM_FLAG_UPDATE) == RESET) {
         }
         __HAL_TIM_CLEAR_FLAG(&TIM6_Handle, TIM_FLAG_UPDATE);
+#else
+        while (__HAL_TIM_GET_FLAG(&TIM9_Handle, TIM_FLAG_UPDATE) == RESET) {
+        }
+        __HAL_TIM_CLEAR_FLAG(&TIM9_Handle, TIM_FLAG_UPDATE);
+#endif
         uint value = adc_read_channel(&self->handle);
         if (typesize == 1) {
             value >>= 4;
@@ -245,7 +259,11 @@ STATIC mp_obj_t adc_read_timed(mp_obj_t self_in, mp_obj_t buf_in, mp_obj_t freq_
     }
 
     // Stop timer
+#if !defined(STM32F401xE)
     HAL_TIM_Base_Stop(&TIM6_Handle);
+#else
+    HAL_TIM_Base_Stop(&TIM9_Handle);
+#endif
 
     return mp_obj_new_int(bufinfo.len);
 }
