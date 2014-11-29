@@ -122,7 +122,11 @@ STATIC const uint8_t nvic_irq_channel[EXTI_NUM_VECTORS] = {
     EXTI9_5_IRQn,   EXTI9_5_IRQn,   EXTI9_5_IRQn,   EXTI9_5_IRQn,   EXTI9_5_IRQn,
     EXTI15_10_IRQn, EXTI15_10_IRQn, EXTI15_10_IRQn, EXTI15_10_IRQn, EXTI15_10_IRQn,
     EXTI15_10_IRQn, PVD_IRQn,       RTC_Alarm_IRQn, OTG_FS_WKUP_IRQn, ETH_WKUP_IRQn,
+#if !defined(STM32F401xE)
     OTG_HS_WKUP_IRQn, TAMP_STAMP_IRQn, RTC_WKUP_IRQn
+#else
+    TAMP_STAMP_IRQn, RTC_WKUP_IRQn
+#endif
 };
 
 // Set override_callback_obj to true if you want to unconditionally set the
