@@ -37,7 +37,9 @@
 #include "runtime.h"
 #include "stream.h"
 #include "uart.h"
+#include "usb.h"
 #include "pybioctl.h"
+#include "pendsv.h"
 #include MICROPY_HAL_H
 
 /// \moduleref pyb
@@ -98,11 +100,29 @@ struct _pyb_uart_obj_t {
 STATIC pyb_uart_obj_t *pyb_uart_obj_all[6];
 
 STATIC mp_obj_t pyb_uart_deinit(mp_obj_t self_in);
+STATIC mp_obj_t mp_const_uart_interrupt = MP_OBJ_NULL;
+static int user_interrupt_char = VCP_CHAR_NONE;
+static void *user_interrupt_data = NULL;
 
 void uart_init0(void) {
     for (int i = 0; i < MP_ARRAY_SIZE(pyb_uart_obj_all); i++) {
         pyb_uart_obj_all[i] = NULL;
     }
+    // create an exception object for interrupting by VCP
+    mp_const_uart_interrupt = mp_obj_new_exception(&mp_type_KeyboardInterrupt);
+    UART_SetInterrupt(VCP_CHAR_NONE, mp_const_uart_interrupt);
+}
+
+void uart_set_interrupt_char(int c) {
+    if (c != VCP_CHAR_NONE) {
+        mp_obj_exception_clear_traceback(mp_const_uart_interrupt);
+    }
+    UART_SetInterrupt(c, mp_const_uart_interrupt);
+}
+
+void UART_SetInterrupt(int chr, void *data) {
+    user_interrupt_char = chr;
+    user_interrupt_data = data;
 }
 
 // unregister all interrupt sources
@@ -160,6 +180,7 @@ STATIC bool uart_init2(pyb_uart_obj_t *uart_obj) {
             __USART2_CLK_ENABLE();
             break;
 
+#if !defined(STM32F401xE)
         // USART3 is on PB10/PB11 (CK,CTS,RTS on PB12,PB13,PB14), PC10/PC11 (CK on PC12), PD8/PD9 (CK on PD10)
         case PYB_UART_3:
             UARTx = USART3;
@@ -193,6 +214,7 @@ STATIC bool uart_init2(pyb_uart_obj_t *uart_obj) {
             GPIO_Pin = GPIO_PIN_0 | GPIO_PIN_1;
 
             __UART4_CLK_ENABLE();
+#endif
             break;
 
         // USART6 is on PC6/PC7 (CK on PC8)
@@ -555,6 +577,7 @@ STATIC mp_obj_t pyb_uart_deinit(mp_obj_t self_in) {
         __USART2_FORCE_RESET();
         __USART2_RELEASE_RESET();
         __USART2_CLK_DISABLE();
+#if !defined(STM32F401xE)
     } else if (uart->Instance == USART3) {
         HAL_NVIC_DisableIRQ(USART3_IRQn);
         __USART3_FORCE_RESET();
@@ -565,6 +588,7 @@ STATIC mp_obj_t pyb_uart_deinit(mp_obj_t self_in) {
         __UART4_FORCE_RESET();
         __UART4_RELEASE_RESET();
         __UART4_CLK_DISABLE();
+#endif
     } else if (uart->Instance == USART6) {
         HAL_NVIC_DisableIRQ(USART6_IRQn);
         __USART6_FORCE_RESET();

@@ -97,9 +97,17 @@ STATIC int parse_compile_execute(mp_lexer_t *lex, mp_parse_input_kind_t input_ki
     nlr_buf_t nlr;
     uint32_t start = HAL_GetTick();
     if (nlr_push(&nlr) == 0) {
+#if MICROPY_ENABLE_USB
         usb_vcp_set_interrupt_char(VCP_CHAR_CTRL_C); // allow ctrl-C to interrupt us
+#else
+        uart_set_interrupt_char(VCP_CHAR_CTRL_C); // allow ctrl-C to interrupt us
+#endif
         mp_call_function_0(module_fun);
+#if MICROPY_ENABLE_USB
         usb_vcp_set_interrupt_char(VCP_CHAR_NONE); // disable interrupt
+#else
+        uart_set_interrupt_char(VCP_CHAR_NONE); // disable interrupt
+#endif
         nlr_pop();
         ret = 1;
         if (exec_flags & EXEC_FLAG_PRINT_EOF) {
@@ -107,8 +115,12 @@ STATIC int parse_compile_execute(mp_lexer_t *lex, mp_parse_input_kind_t input_ki
         }
     } else {
         // uncaught exception
+#if MICROPY_ENABLE_USB
         // FIXME it could be that an interrupt happens just before we disable it here
         usb_vcp_set_interrupt_char(VCP_CHAR_NONE); // disable interrupt
+#else
+        uart_set_interrupt_char(VCP_CHAR_NONE); // disable interrupt
+#endif
         // print EOF after normal output
         if (exec_flags & EXEC_FLAG_PRINT_EOF) {
             stdout_tx_strn("\x04", 1);
@@ -230,7 +242,11 @@ friendly_repl_reset:
         for (;;) {
             nlr_buf_t nlr;
             printf("pyexec_repl: %p\n", x);
+#if MICROPY_ENABLE_USB
             usb_vcp_set_interrupt_char(VCP_CHAR_CTRL_C);
+#else
+            uart_set_interrupt_char(UART_CHAR_CTRL_C);
+#endif
             if (nlr_push(&nlr) == 0) {
                 for (;;) {
                 }
