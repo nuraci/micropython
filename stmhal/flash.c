@@ -51,11 +51,15 @@ static const uint32_t flash_info_table[26] = {
     ADDR_FLASH_SECTOR_5, FLASH_SECTOR_5,
     ADDR_FLASH_SECTOR_6, FLASH_SECTOR_6,
     ADDR_FLASH_SECTOR_7, FLASH_SECTOR_7,
+#if defined(STM32F401xE)
+    ADDR_FLASH_SECTOR_7 + 0x20000, 0,
+#else
     ADDR_FLASH_SECTOR_8, FLASH_SECTOR_8,
     ADDR_FLASH_SECTOR_9, FLASH_SECTOR_9,
     ADDR_FLASH_SECTOR_10, FLASH_SECTOR_10,
     ADDR_FLASH_SECTOR_11, FLASH_SECTOR_11,
     ADDR_FLASH_SECTOR_11 + 0x20000, 0,
+#endif
 };
 
 uint32_t flash_get_sector_info(uint32_t addr, uint32_t *start_addr, uint32_t *size) {
