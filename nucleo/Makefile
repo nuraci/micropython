@@ -79,7 +79,6 @@ SRC_LIB = $(addprefix lib/,\
 
 SRC_C = $(addprefix $(STMHAL_DIR)/,\
 	string0.c \
-	stm32f4xx_hal_msp.c \
 	mphal.c \
 	irq.c \
 	pendsv.c \
