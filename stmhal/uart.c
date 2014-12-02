@@ -108,7 +108,7 @@ void uart_init0(void) {
     for (int i = 0; i < MP_ARRAY_SIZE(pyb_uart_obj_all); i++) {
         pyb_uart_obj_all[i] = NULL;
     }
-    // create an exception object for interrupting by VCP
+    // create an exception object for interrupting by UART
     mp_const_uart_interrupt = mp_obj_new_exception(&mp_type_KeyboardInterrupt);
     UART_SetInterrupt(VCP_CHAR_NONE, mp_const_uart_interrupt);
 }
@@ -342,13 +342,18 @@ void uart_irq_handler(mp_uint_t uart_id) {
         if (self->read_buf_len != 0) {
             uint16_t next_head = (self->read_buf_head + 1) % self->read_buf_len;
             if (next_head != self->read_buf_tail) {
-                // only store data if room in buf
-                if (self->char_width == CHAR_WIDTH_9BIT) {
-                    ((uint16_t*)self->read_buf)[self->read_buf_head] = data;
-                } else {
-                    self->read_buf[self->read_buf_head] = data;
-                }
-                self->read_buf_head = next_head;
+            	if (user_interrupt_char != VCP_CHAR_NONE && data == user_interrupt_char) {
+                    // raise exception when interrupts are finished
+                    pendsv_nlr_jump(user_interrupt_data);
+            	} else {
+            	    // only store data if room in buf
+                    if (self->char_width == CHAR_WIDTH_9BIT) {
+                        ((uint16_t*)self->read_buf)[self->read_buf_head] = data;
+                    } else {
+                        self->read_buf[self->read_buf_head] = data;
+                    }
+                    self->read_buf_head = next_head;
+            	}
             }
         } else {
             // TODO set flag for buffer overflow
