@@ -8,8 +8,8 @@ The Micro Python project
   <img src="https://raw.githubusercontent.com/micropython/micropython/master/logo/upython-with-micro.jpg" alt="MicroPython Logo"/>
 </p>
 
-This is the Micro Python project, which aims to put an implementation
-of Python 3.x on a microcontroller.
+This is a fork of the the Micro Python project, which aims also to put an implementation
+of Python 3.x on some STM32 NUCLEO boards.
 
 WARNING: this project is in early beta stage and is subject to large
 changes of the code-base, including project-wide name changes and API
@@ -30,6 +30,8 @@ Major components in this repository:
 - unix/ -- a version of Micro Python that runs on Unix.
 - stmhal/ -- a version of Micro Python that runs on the Micro Python board
   with an STM32F405RG (using ST's Cube HAL drivers).
+- nucleo/ -- a version of Micro Python that runs on some STM32NUCLEO boards
+  (with an STM32F4x1 and using ST's Cube HAL drivers).
 - teensy/ -- a version of Micro Python that runs on the Teensy 3.1
   (preliminary but functional).
 
