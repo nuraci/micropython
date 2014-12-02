@@ -106,8 +106,8 @@ typedef struct _mp_obj_base_t mp_obj_base_t;
         .map = { \
             .all_keys_are_qstrs = 1, \
             .table_is_fixed_array = 1, \
-            .used = sizeof(table_name) / sizeof(mp_map_elem_t), \
-            .alloc = sizeof(table_name) / sizeof(mp_map_elem_t), \
+            .used = MP_ARRAY_SIZE(table_name), \
+            .alloc = MP_ARRAY_SIZE(table_name), \
             .table = (mp_map_elem_t*)table_name, \
         }, \
     }
@@ -147,6 +147,8 @@ typedef enum _mp_map_lookup_kind_t {
     MP_MAP_LOOKUP_ADD_IF_NOT_FOUND,   // 1
     MP_MAP_LOOKUP_REMOVE_IF_FOUND,    // 2
 } mp_map_lookup_kind_t;
+
+extern const mp_map_t mp_const_empty_map;
 
 static inline bool MP_MAP_SLOT_IS_FILLED(const mp_map_t *map, mp_uint_t pos) { return ((map)->table[pos].key != MP_OBJ_NULL && (map)->table[pos].key != MP_OBJ_SENTINEL); }
 
