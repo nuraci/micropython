@@ -46,8 +46,6 @@
 #include "systick.h"
 #include "readline.h"
 #include "pyexec.h"
-#include "usb.h"
-#include "uart.h"
 #include "pybstdio.h"
 #include "genhdr/py-version.h"
 
@@ -97,17 +95,9 @@ STATIC int parse_compile_execute(mp_lexer_t *lex, mp_parse_input_kind_t input_ki
     nlr_buf_t nlr;
     uint32_t start = HAL_GetTick();
     if (nlr_push(&nlr) == 0) {
-#if MICROPY_ENABLE_USB
-        usb_vcp_set_interrupt_char(VCP_CHAR_CTRL_C); // allow ctrl-C to interrupt us
-#else
-        uart_set_interrupt_char(VCP_CHAR_CTRL_C); // allow ctrl-C to interrupt us
-#endif
+        mp_hal_set_interrupt_char(CHAR_CTRL_C); // allow ctrl-C to interrupt us
         mp_call_function_0(module_fun);
-#if MICROPY_ENABLE_USB
-        usb_vcp_set_interrupt_char(VCP_CHAR_NONE); // disable interrupt
-#else
-        uart_set_interrupt_char(VCP_CHAR_NONE); // disable interrupt
-#endif
+        mp_hal_set_interrupt_char(-1); // disable interrupt
         nlr_pop();
         ret = 1;
         if (exec_flags & EXEC_FLAG_PRINT_EOF) {
@@ -115,12 +105,7 @@ STATIC int parse_compile_execute(mp_lexer_t *lex, mp_parse_input_kind_t input_ki
         }
     } else {
         // uncaught exception
-#if MICROPY_ENABLE_USB
-        // FIXME it could be that an interrupt happens just before we disable it here
-        usb_vcp_set_interrupt_char(VCP_CHAR_NONE); // disable interrupt
-#else
-        uart_set_interrupt_char(VCP_CHAR_NONE); // disable interrupt
-#endif
+        mp_hal_set_interrupt_char(-1); // disable interrupt
         // print EOF after normal output
         if (exec_flags & EXEC_FLAG_PRINT_EOF) {
             stdout_tx_strn("\x04", 1);
@@ -137,8 +122,8 @@ STATIC int parse_compile_execute(mp_lexer_t *lex, mp_parse_input_kind_t input_ki
 
     // display debugging info if wanted
     if ((exec_flags & EXEC_FLAG_ALLOW_DEBUGGING) && repl_display_debugging_info) {
-        uint32_t ticks = HAL_GetTick() - start; // TODO implement a function that does this properly
-        printf("took %lu ms\n", ticks);
+        mp_uint_t ticks = HAL_GetTick() - start; // TODO implement a function that does this properly
+        printf("took " UINT_FMT " ms\n", ticks);
         gc_collect();
         // qstr info
         {
@@ -178,19 +163,19 @@ raw_repl_reset:
         stdout_tx_str(">");
         for (;;) {
             char c = stdin_rx_chr();
-            if (c == VCP_CHAR_CTRL_A) {
+            if (c == CHAR_CTRL_A) {
                 // reset raw REPL
                 goto raw_repl_reset;
-            } else if (c == VCP_CHAR_CTRL_B) {
+            } else if (c == CHAR_CTRL_B) {
                 // change to friendly REPL
                 stdout_tx_str("\r\n");
                 vstr_clear(&line);
                 pyexec_mode_kind = PYEXEC_MODE_FRIENDLY_REPL;
                 return 0;
-            } else if (c == VCP_CHAR_CTRL_C) {
+            } else if (c == CHAR_CTRL_C) {
                 // clear line
                 vstr_reset(&line);
-            } else if (c == VCP_CHAR_CTRL_D) {
+            } else if (c == CHAR_CTRL_D) {
                 // input finished
                 break;
             } else if (c <= 127) {
@@ -242,11 +227,15 @@ friendly_repl_reset:
         for (;;) {
             nlr_buf_t nlr;
             printf("pyexec_repl: %p\n", x);
+<<<<<<< HEAD
 #if MICROPY_ENABLE_USB
             usb_vcp_set_interrupt_char(VCP_CHAR_CTRL_C);
 #else
             uart_set_interrupt_char(UART_CHAR_CTRL_C);
 #endif
+=======
+            mp_hal_set_interrupt_char(CHAR_CTRL_C);
+>>>>>>> upstream/master
             if (nlr_push(&nlr) == 0) {
                 for (;;) {
                 }
@@ -262,21 +251,21 @@ friendly_repl_reset:
         vstr_reset(&line);
         int ret = readline(&line, ">>> ");
 
-        if (ret == VCP_CHAR_CTRL_A) {
+        if (ret == CHAR_CTRL_A) {
             // change to raw REPL
             stdout_tx_str("\r\n");
             vstr_clear(&line);
             pyexec_mode_kind = PYEXEC_MODE_RAW_REPL;
             return 0;
-        } else if (ret == VCP_CHAR_CTRL_B) {
+        } else if (ret == CHAR_CTRL_B) {
             // reset friendly REPL
             stdout_tx_str("\r\n");
             goto friendly_repl_reset;
-        } else if (ret == VCP_CHAR_CTRL_C) {
+        } else if (ret == CHAR_CTRL_C) {
             // break
             stdout_tx_str("\r\n");
             continue;
-        } else if (ret == VCP_CHAR_CTRL_D) {
+        } else if (ret == CHAR_CTRL_D) {
             // exit for a soft reset
             stdout_tx_str("\r\n");
             vstr_clear(&line);
@@ -288,11 +277,11 @@ friendly_repl_reset:
         while (mp_repl_continue_with_input(vstr_str(&line))) {
             vstr_add_char(&line, '\n');
             int ret = readline(&line, "... ");
-            if (ret == VCP_CHAR_CTRL_C) {
+            if (ret == CHAR_CTRL_C) {
                 // cancel everything
                 stdout_tx_str("\r\n");
                 goto input_restart;
-            } else if (ret == VCP_CHAR_CTRL_D) {
+            } else if (ret == CHAR_CTRL_D) {
                 // stop entering compound statement
                 break;
             }

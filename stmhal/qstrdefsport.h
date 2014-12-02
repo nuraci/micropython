@@ -76,6 +76,8 @@ Q(elapsed_micros)
 Q(re)
 Q(zlib)
 Q(json)
+Q(heapq)
+Q(hashlib)
 
 // for file class
 Q(seek)
@@ -83,6 +85,7 @@ Q(tell)
 
 // for USB VCP class
 Q(USB_VCP)
+Q(setinterrupt)
 Q(send)
 Q(recv)
 Q(timeout)
