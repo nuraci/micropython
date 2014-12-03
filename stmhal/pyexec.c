@@ -227,15 +227,7 @@ friendly_repl_reset:
         for (;;) {
             nlr_buf_t nlr;
             printf("pyexec_repl: %p\n", x);
-<<<<<<< HEAD
-#if MICROPY_ENABLE_USB
-            usb_vcp_set_interrupt_char(VCP_CHAR_CTRL_C);
-#else
-            uart_set_interrupt_char(UART_CHAR_CTRL_C);
-#endif
-=======
             mp_hal_set_interrupt_char(CHAR_CTRL_C);
->>>>>>> upstream/master
             if (nlr_push(&nlr) == 0) {
                 for (;;) {
                 }
