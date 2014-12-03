@@ -130,7 +130,6 @@ STATIC mp_obj_t pyb_usb_mode(mp_obj_t usb_mode) {
 }
 MP_DEFINE_CONST_FUN_OBJ_1(pyb_usb_mode_obj, pyb_usb_mode);
 
-
 static const char fresh_boot_py[] =
 "# boot.py -- run on boot-up\r\n"
 "# can run arbitrary Python, but best to keep it minimal\r\n"
@@ -188,7 +187,6 @@ int main(void) {
     __GPIOB_CLK_ENABLE();
     __GPIOC_CLK_ENABLE();
     __GPIOD_CLK_ENABLE();
-    __GPIOH_CLK_ENABLE();
 
 	// basic sub-system init
     pendsv_init();
@@ -311,8 +309,8 @@ soft_reset:
             f_close(&fp);
             f_open(&fp, "/flash/demo.py", FA_WRITE | FA_CREATE_ALWAYS);
             f_write(&fp, fresh_demo_py, sizeof(fresh_demo_py) - 1 /* don't count null terminator */, &n);
-            // TODO check we could write n bytes
             f_close(&fp);
+
             // create readme file
             f_open(&fp, "/flash/README.txt", FA_WRITE | FA_CREATE_ALWAYS);
             f_write(&fp, fresh_readme_txt, sizeof(fresh_readme_txt) - 1 /* don't count null terminator */, &n);
