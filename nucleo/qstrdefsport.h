@@ -156,6 +156,7 @@ Q(any)
 Q(writechar)
 Q(readchar)
 Q(readinto)
+Q(setinterrupt)
 Q(RTS)
 Q(CTS)
 

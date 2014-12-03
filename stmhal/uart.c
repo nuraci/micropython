@@ -101,7 +101,7 @@ STATIC pyb_uart_obj_t *pyb_uart_obj_all[6];
 
 STATIC mp_obj_t pyb_uart_deinit(mp_obj_t self_in);
 STATIC mp_obj_t mp_const_uart_interrupt = MP_OBJ_NULL;
-static int user_interrupt_char = VCP_CHAR_NONE;
+static int user_interrupt_char = -1;
 static void *user_interrupt_data = NULL;
 
 void uart_init0(void) {
@@ -110,11 +110,11 @@ void uart_init0(void) {
     }
     // create an exception object for interrupting by UART
     mp_const_uart_interrupt = mp_obj_new_exception(&mp_type_KeyboardInterrupt);
-    UART_SetInterrupt(VCP_CHAR_NONE, mp_const_uart_interrupt);
+    UART_SetInterrupt(-1, mp_const_uart_interrupt);
 }
 
 void uart_set_interrupt_char(int c) {
-    if (c != VCP_CHAR_NONE) {
+    if (c != -1) {
         mp_obj_exception_clear_traceback(mp_const_uart_interrupt);
     }
     UART_SetInterrupt(c, mp_const_uart_interrupt);
@@ -342,7 +342,7 @@ void uart_irq_handler(mp_uint_t uart_id) {
         if (self->read_buf_len != 0) {
             uint16_t next_head = (self->read_buf_head + 1) % self->read_buf_len;
             if (next_head != self->read_buf_tail) {
-            	if (user_interrupt_char != VCP_CHAR_NONE && data == user_interrupt_char) {
+            	if (user_interrupt_char != -1 && data == user_interrupt_char) {
                     // raise exception when interrupts are finished
                     pendsv_nlr_jump(user_interrupt_data);
             	} else {
@@ -650,6 +650,12 @@ STATIC mp_obj_t pyb_uart_readchar(mp_obj_t self_in) {
 }
 STATIC MP_DEFINE_CONST_FUN_OBJ_1(pyb_uart_readchar_obj, pyb_uart_readchar);
 
+STATIC mp_obj_t pyb_uart_setinterrupt(mp_obj_t self_in, mp_obj_t int_chr_in) {
+    uart_set_interrupt_char(mp_obj_get_int(int_chr_in));
+    return mp_const_none;
+}
+STATIC MP_DEFINE_CONST_FUN_OBJ_2(pyb_uart_setinterrupt_obj, pyb_uart_setinterrupt);
+
 STATIC const mp_map_elem_t pyb_uart_locals_dict_table[] = {
     // instance methods
 
@@ -670,6 +676,7 @@ STATIC const mp_map_elem_t pyb_uart_locals_dict_table[] = {
 
     { MP_OBJ_NEW_QSTR(MP_QSTR_writechar), (mp_obj_t)&pyb_uart_writechar_obj },
     { MP_OBJ_NEW_QSTR(MP_QSTR_readchar), (mp_obj_t)&pyb_uart_readchar_obj },
+    { MP_OBJ_NEW_QSTR(MP_QSTR_setinterrupt), (mp_obj_t)&pyb_uart_setinterrupt_obj },
 
     // class constants
     { MP_OBJ_NEW_QSTR(MP_QSTR_RTS), MP_OBJ_NEW_SMALL_INT(UART_HWCONTROL_RTS) },

@@ -63,6 +63,15 @@ Constructors
 Methods
 -------
 
+.. method:: uart.setinterrupt(chr)
+
+   Set the character which interrupts running Python code.  This is set
+   to 3 (CTRL-C) by default, and when a CTRL-C character is received over
+   the UART port, a KeyboardInterrupt exception is raised.
+
+   Set to -1 to disable this interrupt feature.  This is useful when you
+   want to send raw bytes over the UART port
+
 .. method:: uart.init(baudrate, bits=8, parity=None, stop=1, \*, timeout=1000, timeout_char=0, read_buf_len=64)
 
    Initialise the UART bus with the given parameters:

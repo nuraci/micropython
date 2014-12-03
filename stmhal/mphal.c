@@ -6,6 +6,7 @@
 #include "qstr.h"
 #include "obj.h"
 #include "usb.h"
+#include "uart.h"
 #include "mphal.h"
 
 // this table converts from HAL_StatusTypeDef to POSIX errno
@@ -21,5 +22,9 @@ NORETURN void mp_hal_raise(HAL_StatusTypeDef status) {
 }
 
 void mp_hal_set_interrupt_char(int c) {
+#if !defined(STM32F401xE)
     usb_vcp_set_interrupt_char(c);
+#else
+    uart_set_interrupt_char(c);
+#endif
 }
